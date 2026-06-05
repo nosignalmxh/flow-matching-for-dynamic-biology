@@ -85,6 +85,24 @@ def test_artifact_helpers_save_figures_and_paper_tables(tmp_path):
     assert "mmd" in md_path.read_text()
 
 
+def test_artifact_helpers_resolve_and_remember_sources(tmp_path):
+    from src.artifacts import remember_source, resolve_required_artifact, safe_relpath
+
+    project_root = tmp_path / "project"
+    nested = project_root / "outputs" / "ch04"
+    nested.mkdir(parents=True)
+    artifact = nested / "diagnostic.csv"
+    artifact.write_text("x,y\n1,2\n")
+
+    assert safe_relpath(artifact, root=project_root) == "outputs/ch04/diagnostic.csv"
+    assert resolve_required_artifact("diagnostic.csv", preferred_dirs=[], search_root=project_root) == artifact
+
+    sources = {}
+    remembered = remember_source(sources, "diagnostic", artifact, root=project_root)
+    assert remembered == artifact
+    assert sources == {"diagnostic": "outputs/ch04/diagnostic.csv"}
+
+
 def test_flow_runtime_euler_helpers_preserve_zero_velocity():
     torch = pytest.importorskip("torch")
 

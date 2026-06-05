@@ -180,7 +180,7 @@ def safe_relpath(path: str | Path, root: str | Path | None = None) -> str:
         return str(path)
 
 
-def resolve_required_artifact(filename: str | Path, preferred_dirs) -> Path:
+def resolve_required_artifact(filename: str | Path, preferred_dirs=(), search_root: str | Path | None = None) -> Path:
     filename = Path(filename)
     if filename.is_absolute():
         if filename.exists() and filename.stat().st_size > 0:
@@ -190,6 +190,13 @@ def resolve_required_artifact(filename: str | Path, preferred_dirs) -> Path:
     for candidate in candidates:
         if candidate.exists() and candidate.stat().st_size > 0:
             return candidate
+    if search_root is not None:
+        matches = sorted(
+            [p for p in Path(search_root).rglob(str(filename)) if p.exists() and p.stat().st_size > 0],
+            key=lambda p: (len(p.parts), str(p)),
+        )
+        if matches:
+            return matches[0]
     raise FileNotFoundError(f"Missing required artifact {filename}; checked {[str(p) for p in candidates]}")
 
 
