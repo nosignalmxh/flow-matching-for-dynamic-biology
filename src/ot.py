@@ -12,6 +12,12 @@ def pairwise_squared_distances(X0, X1):
     return ((X0[:, None, :] - X1[None, :, :]) ** 2).sum(axis=-1)
 
 
+def median_positive_scale(C: np.ndarray) -> float:
+    C = np.asarray(C, dtype=float)
+    positive = C[C > 0]
+    return float(np.median(positive)) if positive.size else 1.0
+
+
 def _as_balanced_coupling(pi: np.ndarray, n_source: int, n_target: int) -> np.ndarray:
     pi = np.asarray(pi, dtype=float)
     if pi.shape != (n_source, n_target):
@@ -83,8 +89,7 @@ def compute_cost_matrix(x0, x1, normalize: bool = True):
     C = pairwise_squared_distances(np.asarray(x0, dtype=np.float32), np.asarray(x1, dtype=np.float32)).astype(np.float32)
     if not normalize:
         return C, 1.0
-    positive = C[C > 0]
-    scale = float(np.median(positive)) if positive.size else 1.0
+    scale = median_positive_scale(C)
     scale = max(scale, 1e-12)
     return (C / scale).astype(np.float32), scale
 

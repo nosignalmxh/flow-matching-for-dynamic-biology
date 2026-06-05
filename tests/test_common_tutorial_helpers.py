@@ -60,7 +60,7 @@ def test_artifact_helpers_validate_arrays_paths_and_hashes(tmp_path):
 def test_artifact_helpers_save_figures_and_paper_tables(tmp_path):
     import matplotlib.pyplot as plt
 
-    from src.artifacts import figure_paths_from_name, save_figure, save_paper_table
+    from src.artifacts import figure_paths_from_name, save_figure, save_figure_formats, save_paper_table
 
     fig_dir = tmp_path / "figures"
     png_path, pdf_path, stem = figure_paths_from_name(fig_dir, "example_plot.png")
@@ -75,6 +75,13 @@ def test_artifact_helpers_save_figures_and_paper_tables(tmp_path):
     assert saved_png == png_path
     assert png_path.exists() and png_path.stat().st_size > 0
     assert pdf_path.exists() and pdf_path.stat().st_size > 0
+
+    fig2, ax2 = plt.subplots()
+    ax2.plot([0, 1], [0, 1])
+    multi_paths = save_figure_formats(fig2, fig_dir, "multi_format", formats=("png", "svg"), dpi=72, close=True)
+    assert [path.name for path in multi_paths] == ["multi_format.png", "multi_format.svg"]
+    assert all(path.exists() and path.stat().st_size > 0 for path in multi_paths)
+    assert not plt.fignum_exists(fig2.number)
 
     csv_path, tex_path, md_path = save_paper_table(
         tmp_path / "tables" / "summary",

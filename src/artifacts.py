@@ -82,6 +82,37 @@ def save_figure(
     return png_path
 
 
+def save_figure_formats(
+    fig,
+    output_dir: str | Path,
+    stem: str | Path,
+    *,
+    formats: Iterable[str] = ("png",),
+    dpi: int = 300,
+    close: bool = False,
+    bbox_inches: str = "tight",
+    pad_inches: float = 0.025,
+    **savefig_kwargs,
+) -> list[Path]:
+    import matplotlib.pyplot as plt
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stem = Path(stem).stem
+    paths = []
+    for fmt in formats:
+        suffix = str(fmt).lstrip(".")
+        path = output_dir / f"{stem}.{suffix}"
+        kwargs = dict(bbox_inches=bbox_inches, pad_inches=pad_inches, **savefig_kwargs)
+        if suffix.lower() in {"png", "jpg", "jpeg", "tif", "tiff"}:
+            kwargs.setdefault("dpi", dpi)
+        fig.savefig(path, **kwargs)
+        paths.append(path)
+    if close:
+        plt.close(fig)
+    return paths
+
+
 def save_paper_table(path_stem: str | Path, frame: pd.DataFrame, *, index: bool = False) -> tuple[Path, Path, Path]:
     path_stem = Path(path_stem)
     path_stem.parent.mkdir(parents=True, exist_ok=True)
