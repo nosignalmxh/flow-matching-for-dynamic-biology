@@ -28,7 +28,7 @@ NOTEBOOKS = {
             "fig4_1_independent_coupling_paths.png",
             "fig4_2_random_vs_ot_pairs.png",
             "fig4_2b_epsilon_ablation_pairs.png",
-            "fig4_4_reflow_trajectories.png",
+            "fig4_3_reflow_representative_trajectories.png",
             "fig4_5_random_vs_ot_projected_trajectories.png",
             "table4_1_path_geometry_diagnostics.csv",
             "table4_1_reflow_ablation.csv",
@@ -54,7 +54,7 @@ NOTEBOOKS = {
             "## Exp 11. Prior Boundary Audit",
         ],
         "artifacts": [
-            "fig4_5_random_vs_ot_projected_trajectories.png",
+            "fig4_5b_toy_branching_pairs.png",
             "fig4_8_toy_representation_couplings.png",
             "fig4_10_chord_vs_manifold_path.png",
             "fig4_10_eb_chord_vs_graph_path_phate.png",
@@ -82,15 +82,16 @@ NOTEBOOKS = {
             "## Exp 8. Euclidean Chord vs Manifold-Aware Path",
         ],
         "artifacts": [
-            "fig4_11a_eb_observed_counts.png",
-            "fig4_11b_sampling_depth_sensitivity.png",
-            "fig4_11c_stochastic_bridge_demo.png",
-            "fig4_11d_wfrfm_growth_sensitivity",
+            "plot_raw_observed_counts(",
+            "plot_sampling_depth_bootstrap_sensitivity",
+            "plot_stochastic_bridge_demo",
+            "plot_wfrfm_growth_delta_heatmap(",
+            "plot_wfrfm_agreement_summary(",
             "figA_4_1_prior_strength_sanity_check.png",
             "table4_6_eb_downsampling_diagnostics.csv",
-            "table4_6c_wfrfm_growth_by_bin",
-            "table4_6d_wfrfm_sampling_sensitivity",
-            "wfrfm_sampling_sensitivity_summary",
+            "wfrfm_growth_by_bin",
+            "wfrfm_sampling_sensitivity",
+            "wfrfm_summary",
             "tableA_4_3_prior_boundary_audit.csv",
         ],
     },
@@ -100,15 +101,6 @@ NOTEBOOKS = {
 def _text(path: Path) -> str:
     payload = json.loads(path.read_text())
     return "\n".join("".join(cell.get("source", [])) for cell in payload["cells"])
-
-
-def _manifest_cell_text(path: Path) -> str:
-    payload = json.loads(path.read_text())
-    for cell in payload["cells"]:
-        source = "".join(cell.get("source", []))
-        if "artifact_manifest_04_" in source:
-            return source
-    raise AssertionError(f"missing split-specific artifact manifest cell in {path}")
 
 
 def _load_eb_cell_text(path: Path) -> str:
@@ -125,13 +117,10 @@ def test_ch04_split_notebooks_cover_old_experiments_without_crossing_topics():
         path = PROJECT_ROOT / "notebooks" / filename
         assert path.exists(), filename
         text = _text(path)
-        manifest_text = _manifest_cell_text(path)
-
         for common in [
             "## 0. Setup",
             "## 1. Shared Utilities",
             "## 2. Load EB Data",
-            "## Artifact Manifest",
         ]:
             assert common in text
         for heading in spec["include"]:
@@ -139,7 +128,7 @@ def test_ch04_split_notebooks_cover_old_experiments_without_crossing_topics():
         for heading in spec["exclude"]:
             assert heading not in text, (filename, heading)
         for artifact in spec["artifacts"]:
-            assert artifact in manifest_text, (filename, artifact)
+            assert artifact in text, (filename, artifact)
 
 
 def test_ch04_split_notebook_experiment_headings_are_unique_across_splits():

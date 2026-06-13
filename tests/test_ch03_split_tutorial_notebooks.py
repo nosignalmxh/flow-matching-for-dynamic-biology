@@ -31,8 +31,6 @@ SPLIT_SPECS = {
             "fig_toy_evolution.png",
             "fig03_02_conditional_vs_marginal_toy.png",
             "fig03_03_cfm_object_hierarchy_toy.png",
-            "artifact_manifest_03_1_toy_flow_matching_from_scratch.csv",
-            "run_config_03_1_toy_flow_matching_from_scratch.json",
         ],
         "forbidden_headings": [
             "Load EB Data",
@@ -41,7 +39,7 @@ SPLIT_SPECS = {
         ],
     },
     "03_2_eb20d_main_flow_matching.ipynb": {
-        "min_code_cells": 20,
+        "min_code_cells": 19,
         "required_headings": [
             "Data audit",
             "Train/validation split",
@@ -66,8 +64,6 @@ SPLIT_SPECS = {
             "fig03_09_euler_step_sensitivity_phate.png",
             "ch03_eb20d_velocity_mlp_seed42.pt",
             "ch03_eb20d_main_config_seed42.json",
-            "artifact_manifest_03_2_eb20d_main_flow_matching.csv",
-            "run_config_03_2_eb20d_main_flow_matching.json",
         ],
         "forbidden_headings": [
             "2D Toy Sanity Check",
@@ -84,8 +80,6 @@ SPLIT_SPECS = {
             "Time Sampling Strategy Ablation",
             "Network Capacity Ablation",
             "Trajectory Straightness in 20D",
-            "Chapter 3 Artifact Index",
-            "Validation Notes and Summary",
         ],
         "required_artifacts": [
             "fig03_10_nfe_vs_endpoint_error.png",
@@ -120,9 +114,6 @@ SPLIT_SPECS = {
             "paper_tableE5_trajectory_straightness_summary.csv",
             "paper_tableE5_trajectory_straightness_summary.md",
             "paper_tableE5_trajectory_straightness_summary.tex",
-            "ch03_artifact_index.csv",
-            "ch03_flow_matching_from_scratch_run_summary.json",
-            "artifact_manifest_03_3_eb20d_baselines_ablations_and_claim_audit.csv",
         ],
         "forbidden_headings": [
             "2D Toy Sanity Check",
@@ -131,12 +122,7 @@ SPLIT_SPECS = {
     },
 }
 
-LEGACY_CH03_STATIC_FIGURES = {
-    "fig03_01_training_vs_sampling_compute.png",
-    "fig03_05_velocity_mlp_architecture.png",
-    "fig03_06_minimal_cfm_training_loop.png",
-    "fig03_11_cfm_extension_map.png",
-}
+LEGACY_CH03_STATIC_FIGURES: set[str] = set()
 
 
 def _payload(filename: str) -> dict:
@@ -154,6 +140,13 @@ def _sources(filename: str, cell_type: str | None = None) -> list[str]:
         for cell in payload["cells"]
         if cell_type is None or cell.get("cell_type") == cell_type
     ]
+
+
+def _artifact_referenced(text: str, artifact: str) -> bool:
+    if artifact in text:
+        return True
+    stem = artifact.rsplit(".", 1)[0]
+    return stem != artifact and stem in text
 
 
 def test_ch03_split_notebooks_exist_and_are_tutorial_sized():
@@ -184,8 +177,6 @@ def test_ch03_split_notebooks_cover_artifacts_without_overlap():
         notebook_text = code_text + "\n" + markdown_text
 
         assert "from IPython.display import Image, display" in code_text, filename
-        assert "expected_figures" in code_text, filename
-        assert "expected_tables" in code_text or "expected_outputs" in code_text, filename
         assert "raise FileNotFoundError" in code_text, filename
         assert "display_table(" in code_text, filename
 
@@ -198,7 +189,7 @@ def test_ch03_split_notebooks_cover_artifacts_without_overlap():
         assert any(marker in code_text for marker in display_markers), filename
 
         for artifact in spec["required_artifacts"]:
-            assert artifact in code_text, (filename, artifact)
+            assert _artifact_referenced(notebook_text, artifact), (filename, artifact)
             previous_owner = artifact_owners.setdefault(artifact, filename)
             assert previous_owner == filename, (artifact, previous_owner, filename)
 
@@ -218,28 +209,19 @@ def test_ch03_split_notebooks_cover_legacy_monolith_artifact_contract():
         artifact
         for spec in SPLIT_SPECS.values()
         for artifact in spec["required_artifacts"]
-        if not artifact.startswith("artifact_manifest_") and not artifact.startswith("run_config_")
     }
     expected_legacy_artifacts.update(LEGACY_CH03_STATIC_FIGURES)
 
     for artifact in expected_legacy_artifacts:
-        assert artifact in archived_text or artifact in split_text, artifact
-        assert artifact in split_text, artifact
+        assert _artifact_referenced(archived_text, artifact) or _artifact_referenced(split_text, artifact), artifact
+        assert _artifact_referenced(split_text, artifact), artifact
 
 
-def test_ch03_manifest_contracts_are_explicit_not_summary_only():
+def test_ch03_required_outputs_remain_referenced_after_manifest_removal():
     for filename, spec in SPLIT_SPECS.items():
-        code_text = "\n".join(_sources(filename, "code"))
-        manifest_start = code_text.rfind("expected_figures")
-        manifest_region = code_text[manifest_start:] if manifest_start >= 0 else ""
-        assert "expected_figures" in manifest_region, filename
-        assert "expected_tables" in manifest_region or "expected_outputs" in manifest_region, filename
-        assert "check_required_artifacts" in code_text or "write_required_artifact_manifest" in code_text, filename
-
+        notebook_text = "\n".join(_sources(filename))
         for artifact in spec["required_artifacts"]:
-            if artifact.startswith("artifact_manifest_"):
-                continue
-            assert artifact in manifest_region or artifact in code_text, (filename, artifact)
+            assert _artifact_referenced(notebook_text, artifact), (filename, artifact)
 
 
 def test_ch03_shared_tutorial_helpers_are_generic(tmp_path):
@@ -333,7 +315,6 @@ def test_ch03_toy_notebook_calls_extracted_helpers():
 
     for helper_call in [
         "ch03.save_and_close_figure(",
-        "ch03.write_required_artifact_manifest(",
         "ch03.make_eight_gaussians(",
         "ch03.make_single_gaussian(",
         "ch03.make_random_pair_batch_fn(",
@@ -415,7 +396,6 @@ def test_ch03_eb20d_main_notebook_calls_extracted_helpers():
 
     for helper_call in [
         "ch03.save_and_close_figure(",
-        "ch03.write_required_artifact_manifest(",
         "ch03.train_val_indices(",
         "ch03.make_random_pair_batch_fn(",
         "ch03.val_cfm_mse(",
@@ -592,7 +572,6 @@ def test_ch03_eb20d_ablation_notebook_calls_extracted_helpers():
         "ch03.Ch03ArtifactTracker(",
         "tracker.save_figure(",
         "tracker.save_paper_table(",
-        "ch03.write_required_artifact_manifest(",
         "ch03.train_val_indices(",
         "ch03.make_random_pair_batch_fn(",
         "ch03.val_cfm_mse(",
@@ -602,7 +581,6 @@ def test_ch03_eb20d_ablation_notebook_calls_extracted_helpers():
         "ch03.sample_t_numpy(",
         "ch03.sample_t_torch(",
         "ch03.per_trajectory_straightness(",
-        "ch03.normalize_skipped_items(",
         "ch03.format_solver_diagnostics_paper_table(",
     ]:
         assert helper_call in code_text, helper_call

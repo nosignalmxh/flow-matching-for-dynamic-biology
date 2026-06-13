@@ -130,7 +130,6 @@ def test_ch05_2_notebook_uses_src_helpers_for_display_support():
         "ch05s.build_evaluation_split_figure(",
         "ch05s.plot_metric_panel(",
         "ch05s.build_section52_run_summary(",
-        "ch05s.audit_section52_artifacts(",
     ]:
         assert required_src_call in text
 

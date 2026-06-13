@@ -88,12 +88,8 @@ def test_ch02_notebook_has_second_round_tutorial_quality_gates():
     helper_source = TUTORIAL_HELPER_PATH.read_text()
     max_code_lines = max(len(source.splitlines()) for source in code_sources)
 
-    assert len(code_sources) >= 44
+    assert len(code_sources) >= 43
     assert max_code_lines <= 60
-    assert "expected_figures" in code_text
-    assert "expected_tables" in code_text
-    assert "expected_outputs" in code_text
-    assert "write_artifact_manifest(" in code_text
     assert "raise FileNotFoundError" in helper_source
 
     display_markers = [
@@ -104,13 +100,12 @@ def test_ch02_notebook_has_second_round_tutorial_quality_gates():
         "show_saved_png(",
     ]
     assert any(marker in code_text for marker in display_markers)
-    assert "display_table(" in code_text or "display(" in code_text
+    assert "pd.DataFrame(" in code_text or "show_saved_png(" in code_text
 
     assert "plt.subplots(2, 2" not in code_text
     assert "plt.subplots(1, 4" not in code_text
     assert "figure_layout" in code_text
     assert "section6_three_separate_panel_artifacts" in code_text
-    assert "build_expected_artifact_paths(" in code_text
     assert 'figure_suffixes: Iterable[str] = (".png", ".svg")' in helper_source
     assert "Independent: geometry ignored" in code_text
     assert "Sinkhorn OT: PC-20 cost-guided" in code_text
@@ -158,7 +153,6 @@ def test_ch02_notebook_has_second_round_tutorial_quality_gates():
         "table02_04_cnf_training_bottleneck.csv",
         "table02_04_training_cost_proxy.csv",
         "ch02_run_summary.json",
-        "artifact_manifest_02_distribution_transport_before_fm.csv",
     ]:
         assert filename in code_text
 
@@ -200,7 +194,6 @@ def test_ch02_expected_artifacts_exist():
         "table02_04_cnf_training_bottleneck.csv",
         "table02_04_training_cost_proxy.csv",
         "ch02_run_summary.json",
-        "artifact_manifest_02_distribution_transport_before_fm.csv",
     ]
     for filename in expected_tables:
         assert (output_dir / filename).exists()

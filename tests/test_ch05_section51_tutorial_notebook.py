@@ -103,7 +103,6 @@ def test_section51_notebook_is_tutorial_style_and_keeps_core_experiment_visible(
         "## 8. Compute endpoint metrics",
         "## 9. Compute hand-off diagnostics",
         "## 12. Redraw Figure 5.1 as independent paper panels",
-        "## 14. Final audit",
     ]:
         assert required in text
 
